@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   LayoutDashboard, ArrowLeftRight, Heart, Target, Settings as SettingsIcon,
   Plus, Search, X, TrendingUp, TrendingDown, Wallet, PiggyBank,
@@ -141,45 +141,18 @@ const CATEGORY_META = {
 const INCOME_CATEGORIES = ["Salary", "Pocket Money", "Gift", "Business", "Freelance", "Scholarship", "Investment", "Other"];
 const EXPENSE_CATEGORIES = Object.keys(CATEGORY_META);
 
-const seedTransactions = [
-  { id: 1, type: "income", title: "Monthly salary", amount: 3200, category: "Salary", date: "2026-07-01" },
-  { id: 2, type: "expense", title: "Grocery run", amount: 84.5, category: "Food", date: "2026-07-03" },
-  { id: 3, type: "expense", title: "Spotify + Netflix", amount: 22.98, category: "Subscriptions", date: "2026-07-04" },
-  { id: 4, type: "expense", title: "New keyboard", amount: 129, category: "Technology", date: "2026-07-06" },
-  { id: 5, type: "income", title: "Logo design gig", amount: 350, category: "Freelance", date: "2026-07-07" },
-  { id: 6, type: "expense", title: "Metro pass", amount: 60, category: "Transport", date: "2026-07-08" },
-  { id: 7, type: "expense", title: "Dinner out", amount: 46.2, category: "Food", date: "2026-07-10" },
-  { id: 8, type: "expense", title: "Gym membership", amount: 35, category: "Sports", date: "2026-07-11" },
-  { id: 9, type: "expense", title: "Steam sale", amount: 58, category: "Gaming", date: "2026-07-13" },
-  { id: 10, type: "expense", title: "Electricity bill", amount: 74, category: "Bills", date: "2026-07-14" },
-  { id: 11, type: "income", title: "Birthday gift", amount: 100, category: "Gift", date: "2026-07-15" },
-  { id: 12, type: "expense", title: "Jacket", amount: 89, category: "Clothes", date: "2026-07-16" },
-];
+const seedTransactions = [];
+const seedWishlist = [];
+const seedGoals = [];
 
-const seedWishlist = [
-  { id: 1, name: "MacBook Air M4", price: 1299, saved: 640, priority: "High" },
-  { id: 2, name: "Standing desk", price: 420, saved: 420, priority: "Medium" },
-  { id: 3, name: "Noise-cancelling headphones", price: 249, saved: 90, priority: "Low" },
-];
-
-const seedGoals = [
-  { id: 1, name: "Emergency fund", target: 5000, saved: 3100, deadline: "2026-12-31" },
-  { id: 2, name: "Trip to Japan", target: 2500, saved: 780, deadline: "2027-04-01" },
-];
-
-const trendData = [
-  { label: "W1", spending: 210 }, { label: "W2", spending: 340 },
-  { label: "W3", spending: 180 }, { label: "W4", spending: 400 },
-];
-
-const monthlyData = [
-  { label: "Feb", income: 3400, expenses: 2100 },
-  { label: "Mar", income: 3100, expenses: 2450 },
-  { label: "Apr", income: 3600, expenses: 2200 },
-  { label: "May", income: 3300, expenses: 2800 },
-  { label: "Jun", income: 3550, expenses: 2350 },
-  { label: "Jul", income: 3650, expenses: 2000 },
-];
+function loadLocal(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 const COUNTRY_CURRENCY = {
   US: "USD", GB: "GBP", MA: "MAD", FR: "EUR", DE: "EUR", ES: "EUR", IT: "EUR",
@@ -276,20 +249,31 @@ function inputStyle() {
 
 export default function MyWallet() {
   const [tab, setTab] = useState("dashboard");
-  const [transactions, setTransactions] = useState(seedTransactions);
-  const [wishlist] = useState(seedWishlist);
-  const [goals] = useState(seedGoals);
+  const [transactions, setTransactions] = useState(() => loadLocal("mw_transactions", seedTransactions));
+  const [wishlist, setWishlist] = useState(() => loadLocal("mw_wishlist", seedWishlist));
+  const [goals, setGoals] = useState(() => loadLocal("mw_goals", seedGoals));
   const [showTxModal, setShowTxModal] = useState(false);
+  const [showWishModal, setShowWishModal] = useState(false);
+  const [showGoalModal, setShowGoalModal] = useState(false);
   const [txType, setTxType] = useState("expense");
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
 
-  const [accent, setAccent] = useState(THEME_COLORS[0].value);
-  const [currency, setCurrency] = useState(() => detectCurrencyFromLocale());
-  const [autoCurrency, setAutoCurrency] = useState(true);
-  const [langCode, setLangCode] = useState("en");
-  const [themeMode, setThemeMode] = useState("dark");
+  const [accent, setAccent] = useState(() => loadLocal("mw_accent", THEME_COLORS[0].value));
+  const [currency, setCurrency] = useState(() => loadLocal("mw_currency", detectCurrencyFromLocale()));
+  const [autoCurrency, setAutoCurrency] = useState(() => loadLocal("mw_autoCurrency", true));
+  const [langCode, setLangCode] = useState(() => loadLocal("mw_langCode", "en"));
+  const [themeMode, setThemeMode] = useState(() => loadLocal("mw_themeMode", "dark"));
   const t = LANGS[langCode];
+
+  useEffect(() => { localStorage.setItem("mw_transactions", JSON.stringify(transactions)); }, [transactions]);
+  useEffect(() => { localStorage.setItem("mw_wishlist", JSON.stringify(wishlist)); }, [wishlist]);
+  useEffect(() => { localStorage.setItem("mw_goals", JSON.stringify(goals)); }, [goals]);
+  useEffect(() => { localStorage.setItem("mw_accent", JSON.stringify(accent)); }, [accent]);
+  useEffect(() => { localStorage.setItem("mw_currency", JSON.stringify(currency)); }, [currency]);
+  useEffect(() => { localStorage.setItem("mw_autoCurrency", JSON.stringify(autoCurrency)); }, [autoCurrency]);
+  useEffect(() => { localStorage.setItem("mw_langCode", JSON.stringify(langCode)); }, [langCode]);
+  useEffect(() => { localStorage.setItem("mw_themeMode", JSON.stringify(themeMode)); }, [themeMode]);
 
   const theme = themeMode === "light"
     ? { bg: "#F5F5F7", card: "#FFFFFF", card2: "#F0F0F1", border: "#E4E4E7", text: "#0A0A0A", sub: "#6B7280" }
@@ -302,7 +286,9 @@ export default function MyWallet() {
 
   const cur = (n) => (currency.position === "before" ? `${currency.symbol}${fmt(n)}` : `${fmt(n)} ${currency.symbol}`);
 
-  const [form, setForm] = useState({ title: "", amount: "", category: "Food", date: "2026-07-18" });
+  const [form, setForm] = useState({ title: "", amount: "", category: "Food", date: new Date().toISOString().slice(0, 10) });
+  const [wishForm, setWishForm] = useState({ name: "", price: "", saved: "", priority: "Medium" });
+  const [goalForm, setGoalForm] = useState({ name: "", target: "", saved: "", deadline: "" });
 
   const totalIncome = useMemo(() => transactions.filter(tx => tx.type === "income").reduce((s, tx) => s + tx.amount, 0), [transactions]);
   const totalExpenses = useMemo(() => transactions.filter(tx => tx.type === "expense").reduce((s, tx) => s + tx.amount, 0), [transactions]);
@@ -336,6 +322,37 @@ export default function MyWallet() {
       .sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [transactions, filterCategory, search]);
 
+  const monthlyData = useMemo(() => {
+    const now = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({ year: d.getFullYear(), month: d.getMonth(), label: d.toLocaleString("en-US", { month: "short" }) });
+    }
+    return months.map(({ year, month, label }) => {
+      const inMonth = (tx) => { const dt = new Date(tx.date); return dt.getFullYear() === year && dt.getMonth() === month; };
+      const income = transactions.filter(tx => tx.type === "income" && inMonth(tx)).reduce((s, tx) => s + tx.amount, 0);
+      const expenses = transactions.filter(tx => tx.type === "expense" && inMonth(tx)).reduce((s, tx) => s + tx.amount, 0);
+      return { label, income, expenses };
+    });
+  }, [transactions]);
+
+  const trendData = useMemo(() => {
+    const now = new Date();
+    const weeks = [];
+    for (let i = 3; i >= 0; i--) {
+      const end = new Date(now); end.setDate(now.getDate() - i * 7);
+      const start = new Date(end); start.setDate(end.getDate() - 6);
+      weeks.push({ label: `S${4 - i}`, start, end });
+    }
+    return weeks.map(w => {
+      const spending = transactions
+        .filter(tx => tx.type === "expense" && new Date(tx.date) >= w.start && new Date(tx.date) <= w.end)
+        .reduce((s, tx) => s + tx.amount, 0);
+      return { label: w.label, spending };
+    });
+  }, [transactions]);
+
   function addTransaction() {
     if (!form.title || !form.amount) return;
     setTransactions(prev => [
@@ -348,6 +365,34 @@ export default function MyWallet() {
 
   function removeTx(id) {
     setTransactions(prev => prev.filter(tx => tx.id !== id));
+  }
+
+  function addWishItem() {
+    if (!wishForm.name || !wishForm.price) return;
+    setWishlist(prev => [
+      { id: Date.now(), name: wishForm.name, price: parseFloat(wishForm.price), saved: parseFloat(wishForm.saved) || 0, priority: wishForm.priority },
+      ...prev,
+    ]);
+    setWishForm({ name: "", price: "", saved: "", priority: "Medium" });
+    setShowWishModal(false);
+  }
+
+  function removeWishItem(id) {
+    setWishlist(prev => prev.filter(w => w.id !== id));
+  }
+
+  function addGoal() {
+    if (!goalForm.name || !goalForm.target) return;
+    setGoals(prev => [
+      { id: Date.now(), name: goalForm.name, target: parseFloat(goalForm.target), saved: parseFloat(goalForm.saved) || 0, deadline: goalForm.deadline },
+      ...prev,
+    ]);
+    setGoalForm({ name: "", target: "", saved: "", deadline: "" });
+    setShowGoalModal(false);
+  }
+
+  function removeGoal(id) {
+    setGoals(prev => prev.filter(g => g.id !== id));
   }
 
   return (
@@ -589,7 +634,15 @@ export default function MyWallet() {
 
         {tab === "wishlist" && (
           <div className="flex flex-col gap-5">
-            <h1 className="text-white text-2xl font-medium">{t.wishlistTitle}</h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-white text-2xl font-medium">{t.wishlistTitle}</h1>
+              <button onClick={() => setShowWishModal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white mw-force-white" style={{ background: accent }}>
+                <Plus size={16} /> {t.addTransaction}
+              </button>
+            </div>
+            {wishlist.length === 0 && (
+              <Card className="p-10 text-center text-sm" style={{ color: "var(--sub)" }}>{t.noTransactions}</Card>
+            )}
             <div className="grid grid-cols-2 gap-4">
               {wishlist.map(item => {
                 const pct = Math.round((item.saved / item.price) * 100);
@@ -597,12 +650,17 @@ export default function MyWallet() {
                   <Card key={item.id} className="p-5 flex flex-col gap-3">
                     <div className="flex items-center justify-between">
                       <span className="text-white font-medium">{item.name}</span>
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full"
-                        style={{ background: item.priority === "High" ? "#EF44441A" : item.priority === "Medium" ? "#F59E0B1A" : "#3B82F61A", color: item.priority === "High" ? "#EF4444" : item.priority === "Medium" ? "#F59E0B" : "#3B82F6" }}
-                      >
-                        {item.priority}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="text-xs px-2 py-0.5 rounded-full"
+                          style={{ background: item.priority === "High" ? "#EF44441A" : item.priority === "Medium" ? "#F59E0B1A" : "#3B82F61A", color: item.priority === "High" ? "#EF4444" : item.priority === "Medium" ? "#F59E0B" : "#3B82F6" }}
+                        >
+                          {item.priority}
+                        </span>
+                        <button onClick={() => removeWishItem(item.id)} className="text-[var(--sub)] hover:text-[#EF4444]">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-baseline gap-1">
                       <span className="text-lg text-white font-medium">{cur(item.saved)}</span>
@@ -622,14 +680,25 @@ export default function MyWallet() {
 
         {tab === "goals" && (
           <div className="flex flex-col gap-5">
-            <h1 className="text-white text-2xl font-medium">{t.goalsTitle}</h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-white text-2xl font-medium">{t.goalsTitle}</h1>
+              <button onClick={() => setShowGoalModal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white mw-force-white" style={{ background: accent }}>
+                <Plus size={16} /> {t.addTransaction}
+              </button>
+            </div>
+            {goals.length === 0 && (
+              <Card className="p-10 text-center text-sm" style={{ color: "var(--sub)" }}>{t.noTransactions}</Card>
+            )}
             <div className="grid grid-cols-2 gap-4">
               {goals.map(g => {
                 const pct = Math.round((g.saved / g.target) * 100);
                 const r = 42;
                 const circumference = 2 * Math.PI * r;
                 return (
-                  <Card key={g.id} className="p-6 flex items-center gap-6">
+                  <Card key={g.id} className="p-6 flex items-center gap-6 relative">
+                    <button onClick={() => removeGoal(g.id)} className="absolute top-3 right-3 text-[var(--sub)] hover:text-[#EF4444]">
+                      <Trash2 size={14} />
+                    </button>
                     <svg width="100" height="100" viewBox="0 0 100 100">
                       <circle cx="50" cy="50" r={r} fill="none" stroke="var(--border)" strokeWidth="8" />
                       <circle
@@ -821,6 +890,89 @@ export default function MyWallet() {
               style={inputStyle()}
             />
             <button onClick={addTransaction} className="mt-2 py-2.5 rounded-xl text-sm font-medium text-white mw-force-white" style={{ background: accent }}>
+              {t.saveTransaction}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {showWishModal && (
+        <Modal title={t.wishlistTitle} onClose={() => setShowWishModal(false)}>
+          <div className="flex flex-col gap-3">
+            <input
+              placeholder={t.title}
+              value={wishForm.name}
+              onChange={(e) => setWishForm(f => ({ ...f, name: e.target.value }))}
+              className="px-3 py-2.5 rounded-xl text-sm outline-none placeholder:text-[var(--sub)]"
+              style={inputStyle()}
+            />
+            <input
+              placeholder={t.amount + " total"}
+              type="number"
+              value={wishForm.price}
+              onChange={(e) => setWishForm(f => ({ ...f, price: e.target.value }))}
+              className="px-3 py-2.5 rounded-xl text-sm outline-none placeholder:text-[var(--sub)]"
+              style={inputStyle()}
+            />
+            <input
+              placeholder={t.savings + " déjà mis de côté"}
+              type="number"
+              value={wishForm.saved}
+              onChange={(e) => setWishForm(f => ({ ...f, saved: e.target.value }))}
+              className="px-3 py-2.5 rounded-xl text-sm outline-none placeholder:text-[var(--sub)]"
+              style={inputStyle()}
+            />
+            <select
+              value={wishForm.priority}
+              onChange={(e) => setWishForm(f => ({ ...f, priority: e.target.value }))}
+              className="px-3 py-2.5 rounded-xl text-sm outline-none"
+              style={inputStyle()}
+            >
+              <option>High</option>
+              <option>Medium</option>
+              <option>Low</option>
+            </select>
+            <button onClick={addWishItem} className="mt-2 py-2.5 rounded-xl text-sm font-medium text-white mw-force-white" style={{ background: accent }}>
+              {t.saveTransaction}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {showGoalModal && (
+        <Modal title={t.goalsTitle} onClose={() => setShowGoalModal(false)}>
+          <div className="flex flex-col gap-3">
+            <input
+              placeholder={t.title}
+              value={goalForm.name}
+              onChange={(e) => setGoalForm(f => ({ ...f, name: e.target.value }))}
+              className="px-3 py-2.5 rounded-xl text-sm outline-none placeholder:text-[var(--sub)]"
+              style={inputStyle()}
+            />
+            <input
+              placeholder={t.amount + " cible"}
+              type="number"
+              value={goalForm.target}
+              onChange={(e) => setGoalForm(f => ({ ...f, target: e.target.value }))}
+              className="px-3 py-2.5 rounded-xl text-sm outline-none placeholder:text-[var(--sub)]"
+              style={inputStyle()}
+            />
+            <input
+              placeholder={t.savings + " déjà mis de côté"}
+              type="number"
+              value={goalForm.saved}
+              onChange={(e) => setGoalForm(f => ({ ...f, saved: e.target.value }))}
+              className="px-3 py-2.5 rounded-xl text-sm outline-none placeholder:text-[var(--sub)]"
+              style={inputStyle()}
+            />
+            <input
+              type="date"
+              value={goalForm.deadline}
+              onChange={(e) => setGoalForm(f => ({ ...f, deadline: e.target.value }))}
+              className="px-3 py-2.5 rounded-xl text-sm outline-none"
+              style={inputStyle()}
+            />
+            <button onClick={addGoal} className="mt-2 py-2.5 rounded-xl text-sm font-medium text-white mw-force-white" style={{ background: accent }}>
               {t.saveTransaction}
             </button>
           </div>
